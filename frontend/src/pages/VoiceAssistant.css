@@ -1,0 +1,26 @@
+/* VoiceAssistant.css */
+
+.recording-indicator {
+    width: 14px;
+    height: 14px;
+    background-color: red;
+    border-radius: 50%;
+    animation: pulse 1s infinite;
+    margin-left: 10px;
+  }
+  
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.5);
+      opacity: 0.6;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  

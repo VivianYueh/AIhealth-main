@@ -1,0 +1,14 @@
+請在TERMINAL 輸入:
+
+npm run dev
+
+然後
+
+npx vite --host localhost
+就可以顯示 及時網頁
+
+
+
+{ /*key: "chang", img: "/public/uploads/member2.jpg" */},
+{/* key: "chien", img: "/public/uploads/member4.jpg" */},
+{/* key: "che", img: "/public/uploads/member3.jpg" */},

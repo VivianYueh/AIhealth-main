@@ -1,0 +1,128 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+/* Logo hover 動畫保留 */
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+.card {
+  padding: 2em;
+}
+.read-the-docs {
+  color: #888;
+}
+
+/* 桌機導覽按鈕樣式 */
+.nav-link-btn {
+  font-weight: 600;
+  color: var(--nav-text, #333);
+  background: transparent;
+  border: none;
+  padding: 0.5rem 1.1rem;
+  font-size: 1rem;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: color 0.2s ease;
+}
+
+.nav-link-btn i {
+  font-size: 1.1rem;
+}
+
+.nav-link-btn:hover,
+.nav-link-btn:focus {
+  color: var(--nav-hover, #d9230f);
+}
+
+.nav-link-btn::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  height: 3px;
+  width: 0%;
+  background: linear-gradient(to right, #ff4e50, #f9d423);
+  transition: width 0.3s ease, left 0.3s ease;
+}
+
+.nav-link-btn:hover::after,
+.nav-link-btn:focus::after {
+  width: 100%;
+  left: 0;
+}
+
+/* Modal 按鈕 hover 效果 */
+.modal-body .btn-outline-dark:hover {
+  color: #d9230f;
+  border-color: #d9230f;
+  background-color: #f8f9fa;
+}
+
+/* 🌙 深色模式整體配色切換 */
+body.dark-mode {
+  --nav-text: #eee;
+  --nav-hover: #ffafbd;
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+/* Navbar、Modal、段落背景 */
+body.dark-mode .navbar {
+  background-color: #1e1e1e !important;
+}
+body.dark-mode .modal-content {
+  background-color: #1e1e1e;
+  color: #eee;
+}
+body.dark-mode section {
+  background-color: #1e1e1e !important;
+  color: #e0e0e0;
+}
+
+/* 專屬背景修正 */
+body.dark-mode .bg-light {
+  background-color: #2a2a2a !important;
+}
+body.dark-mode .bg-white {
+  background-color: #1e1e1e !important;
+}
+
+/* 細節修正 */
+body.dark-mode .text-muted {
+  color: #bbb !important;
+}
+body.dark-mode .border {
+  border-color: #444 !important;
+}
+body.dark-mode .list-group-item {
+  background-color: transparent;
+  border-color: #333;
+  color: #ddd;
+}
+body.dark-mode .carousel-item > div {
+  background-color: #2a2a2a !important;
+}
+.hover\:bg-dark-subtle:hover {
+  background-color: #f8f9fa; /* Bootstrap light gray */
+}
+.animated-chart {
+  transition: transform 0.3s ease;
+}
+.animated-chart:hover {
+  transform: scale(1.07);
+}

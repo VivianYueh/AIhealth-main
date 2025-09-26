@@ -1,0 +1,43 @@
+/* 卡片整體動畫 */
+.team-card {
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+.team-card:hover {
+  transform: translateY(-6px) scale(1.03);
+  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.15);
+}
+
+/* 1:1 方形裁切容器 */
+.team-img-wrapper {
+  width: 100%;
+  aspect-ratio: 1 / 1;   /* 長寬比例固定 */
+  overflow: hidden;      /* 超出裁掉 */
+}
+
+/* 圖片本身：cover 填滿、hover 放大 */
+.team-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+.team-card:hover .team-img {
+  transform: scale(1.08);
+}
+#team-section,
+#team-section * {
+  -webkit-user-select: none;  /* iOS Safari */
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.team-card:focus,
+.team-card:active {
+  background-color: transparent !important;
+  outline: none;
+}
+
+#team-section ::selection {
+  background: transparent;
+}

@@ -1,0 +1,18 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "guidelines",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "family_ids",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "approved",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ]
+}

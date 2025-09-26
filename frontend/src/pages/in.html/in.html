@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>手勢辨識與錄影示範</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            background: #fafafa;
+        }
+
+        #video,
+        #canvas {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            width: 540px;
+            height: 310px;
+            transform: translateX(-50%) scaleX(-1);
+            /* 鏡像顯示 */
+        }
+
+        #result {
+            position: absolute;
+            top: 380px;
+            width: 100%;
+            font-size: 2em;
+            text-align: center;
+            color: #333;
+        }
+
+        #timer {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2.5em;
+            color: #e60073;
+        }
+
+        /* 按鈕樣式 */
+        #startButton {
+            position: absolute;
+            top: 420px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5em;
+            padding: 10px 20px;
+            background: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* 下載連結樣式 */
+        #downloadLink {
+            position: absolute;
+            top: 480px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5em;
+            text-decoration: none;
+            background: #4caf50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>手勢辨識與錄影示範</h1>
+    <div id="timer">未開始錄影</div>
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas"></canvas>
+    <div id="result">手勢：無</div>
+    <!-- 按鈕：準備好了再開始錄影 -->
+    <button id="startButton">準備好了，開始錄影</button>
+    <!-- 下載錄影檔案連結 -->
+    <a id="downloadLink" href="#" download="recording.webm">下載錄影檔案</a>
+
+    <!-- MediaPipe Hands 與繪圖工具 -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+    <script type="module">
+        const videoElement = document.getElementById("video");
+        const canvasElement = document.getElementById("canvas");
+        const canvasCtx = canvasElement.getContext("2d");
+        const resultDiv = document.getElementById("result");
+        const timerDiv = document.getElementById("timer");
+        const startButton = document.getElementById("startButton");
+        const downloadLink = document.getElementById("downloadLink");
+        const VIDEO_WIDTH = 540;
+        const VIDEO_HEIGHT = 310;
+
+        // 手勢辨識相關參數
+        const fingerJoints = [
+            [0, 1, 2, 3, 4],
+            [5, 6, 7, 8],
+            [9, 10, 11, 12],
+            [13, 14, 15, 16],
+            [17, 18, 19, 20],
+        ];
+        const fingerColors = ["red", "green", "blue", "orange", "purple"];
+
+        //輸入兩個向量，回傳角度
+        function vector2dAngle(v1, v2) {
+            const dot = v1[0] * v2[0] + v1[1] * v2[1]; //計算向量內積
+            const mag1 = Math.sqrt(v1[0] ** 2 + v1[1] ** 2); //計算V1向量長度
+            const mag2 = Math.sqrt(v2[0] ** 2 + v2[1] ** 2); //計算V2向量長度
+            if (mag1 * mag2 === 0) return 180; //如果有一方長度 = 0 回傳180度
+            let cosTheta = dot / (mag1 * mag2); //計算cos
+            cosTheta = Math.min(Math.max(cosTheta, -1), 1); // 為避免數值誤差，用限制在[-1,1]裡面
+            return Math.acos(cosTheta) * (180 / Math.PI); //用反餘弦（acos）求出弧度再用180/pi 然後回傳角度
+        }
+
+        //根據手部關鍵點（landmarks）計算每根手指的彎曲角度。這些角度反映從手腕（或近似點）到指尖之間的相對彎曲狀態。
+        function handAngle(landmarks) {
+            //將這些歸一化座標乘上預設的影像寬度與高度，，得到實際的像素座標。
+            const pts = landmarks.map(pt => [pt.x * VIDEO_WIDTH, pt.y * VIDEO_HEIGHT]);
+            const angles = [];
+            //[0, 1, 2, 3, 4]
+            let v1 = [pts[0][0] - pts[2][0], pts[0][1] - pts[2][1]];
+            let v2 = [pts[3][0] - pts[4][0], pts[3][1] - pts[4][1]];
+            angles.push(vector2dAngle(v1, v2)); //拇指
+            //[5, 6, 7, 8]
+            v1 = [pts[0][0] - pts[6][0], pts[0][1] - pts[6][1]];
+            v2 = [pts[7][0] - pts[8][0], pts[7][1] - pts[8][1]];
+            angles.push(vector2dAngle(v1, v2)); //食指
+            //[9, 10, 11, 12]
+            v1 = [pts[0][0] - pts[10][0], pts[0][1] - pts[10][1]];
+            v2 = [pts[11][0] - pts[12][0], pts[11][1] - pts[12][1]];
+            angles.push(vector2dAngle(v1, v2)); //中指
+            //[13, 14, 15, 16]
+            v1 = [pts[0][0] - pts[14][0], pts[0][1] - pts[14][1]];
+            v2 = [pts[15][0] - pts[16][0], pts[15][1] - pts[16][1]];
+            angles.push(vector2dAngle(v1, v2)); //無名指
+            //[17, 18, 19, 20]
+            v1 = [pts[0][0] - pts[18][0], pts[0][1] - pts[18][1]];
+            v2 = [pts[19][0] - pts[20][0], pts[19][1] - pts[20][1]];
+            angles.push(vector2dAngle(v1, v2));//小拇指
+
+            return angles;
+        }
+
+        //根據計算出的五根手指的角度（fingerAngles），判斷出手勢代表的意義，並回傳對應的字串（例如 "good"、"ROCK!"、"0"、"1" 等）。
+        function handPos(fingerAngles) {
+            const [f1, f2, f3, f4, f5] = fingerAngles; //分別代表拇指、食指、中指、無名指和小拇指的角度
+            if (f1 < 50 && f2 >= 50 && f3 >= 50 && f4 >= 50 && f5 >= 50) {
+                return 'good';
+            } else if (f1 >= 50 && f2 >= 50 && f3 < 50 && f4 >= 50 && f5 >= 50) {
+                return 'no!!!';
+            } else if (f1 < 50 && f2 < 50 && f3 >= 50 && f4 >= 50 && f5 < 50) {
+                return 'ROCK!';
+            } else if (f1 >= 50 && f2 >= 50 && f3 >= 50 && f4 >= 50 && f5 >= 50) {
+                return '0';
+            } else if (f1 >= 50 && f2 >= 50 && f3 >= 50 && f4 >= 50 && f5 < 50) {
+                return 'pink';
+            } else if (f1 >= 50 && f2 < 50 && f3 >= 50 && f4 >= 50 && f5 >= 50) {
+                return '1';
+            } else if (f1 >= 50 && f2 < 50 && f3 < 50 && f4 >= 50 && f5 >= 50) {
+                return '2';
+            } else if (f1 >= 50 && f2 >= 50 && f3 < 50 && f4 < 50 && f5 < 50) {
+                return 'ok';
+            } else if (f1 < 50 && f2 >= 50 && f3 < 50 && f4 < 50 && f5 < 50) {
+                return 'ok';
+            } else if (f1 >= 50 && f2 < 50 && f3 < 50 && f4 < 50 && f5 > 50) {
+                return '3';
+            } else if (f1 >= 50 && f2 < 50 && f3 < 50 && f4 < 50 && f5 < 50) {
+                return '4';
+            } else if (f1 < 50 && f2 < 50 && f3 < 50 && f4 < 50 && f5 < 50) {
+                return '5';
+            } else if (f1 < 50 && f2 >= 50 && f3 >= 50 && f4 >= 50 && f5 < 50) {
+                return '6';
+            } else if (f1 < 50 && f2 < 50 && f3 >= 50 && f4 >= 50 && f5 >= 50) {
+                return '7';
+            } else if (f1 < 50 && f2 < 50 && f3 < 50 && f4 >= 50 && f5 >= 50) {
+                return '8';
+            } else if (f1 < 50 && f2 < 50 && f3 < 50 && f4 < 50 && f5 >= 50) {
+                return '9';
+            } else {
+                return '';
+            }
+        }
+
+        // ====== MediaPipe Hands 初始化 ======
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+        });
+        hands.setOptions({
+            maxNumHands: 2, //maxNumHands: 同時偵測最多兩隻手
+            modelComplexity: 0, //modelComplexity: 模型的複雜度（0 表示較簡單的模型）
+            minDetectionConfidence: 0.5, //定義手部偵測所需的最低信心值0.5
+            minTrackingConfidence: 0.5, //定義手部追蹤所需的最低信心值0.5
+        });
+
+        //畫骨架
+        hands.onResults((results) => {
+            canvasCtx.save(); //使用 canvasCtx.save() 保存當前畫布狀態。
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height); //用 clearRect 清除之前繪製的內容。
+            canvasCtx.drawImage(videoElement, 0, 0, VIDEO_WIDTH, VIDEO_HEIGHT); //將當前從攝影機取得的影像videoElement繪製到Canvas上，作為背景。
+            canvasCtx.globalAlpha = 0.7; // 半透明設定
+
+            //處理每隻偵測到的手部
+            //程式首先判斷 results.multiHandLandmarks 是否存在且陣列長度大於 0，這代表模型已經偵測到至少一隻手部的關鍵點資料。
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                //逐一處理每隻手：
+                for (const landmarks of results.multiHandLandmarks) {
+                    // 繪製彩色骨架
+                    // fingerJoints:上面已經定義的陣列，代表每隻手的每個節點
+                    fingerJoints.forEach((finger, fIndex) => {
+                        //fingerColors:用上面的顏色定義每隻手指的顏色
+                        const color = fingerColors[fIndex];
+                        //在每根手指中，透過迴圈依次取出相鄰的兩個關鍵點索引（例如，第 0 個與第 1 個、第 1 個與第 2 個……）。
+                        for (let i = 0; i < finger.length - 1; i++) {
+                            //每個 landmark 的 x 與 y 值都是 normalized 值，必須乘上影像寬度（VIDEO_WIDTH）與高度（VIDEO_HEIGHT）來轉換成實際的像素座標。
+                            const startIdx = finger[i];
+                            const endIdx = finger[i + 1];
+                            const startX = landmarks[startIdx].x * VIDEO_WIDTH;
+                            const startY = landmarks[startIdx].y * VIDEO_HEIGHT;
+                            const endX = landmarks[endIdx].x * VIDEO_WIDTH;
+                            const endY = landmarks[endIdx].y * VIDEO_HEIGHT;
+                            //利用 Canvas API
+                            canvasCtx.beginPath(); //開始一個新的繪圖路徑
+                            canvasCtx.moveTo(startX, startY); //將繪圖起點設為第一個關鍵點的位置
+                            canvasCtx.lineTo(endX, endY); //畫出從起點到下一個關鍵點的直線
+                            canvasCtx.strokeStyle = color;
+                            canvasCtx.lineWidth = 4;
+                            canvasCtx.stroke(); //實際繪製出該線條
+                        }
+                    });
+                    // 繪製關節點
+                    //遍歷所有關鍵點
+                    for (let i = 0; i < landmarks.length; i++) {
+                        // 計算每個關鍵點的像素位置 
+                        const x = landmarks[i].x * VIDEO_WIDTH;
+                        const y = landmarks[i].y * VIDEO_HEIGHT;
+                        canvasCtx.beginPath(); //開始一個新的路徑
+                        canvasCtx.arc(x, y, 6, 0, 2 * Math.PI); //以該座標為中心，畫出一個半徑為6的圓形，這表示一個手部關節。
+                        canvasCtx.fillStyle = "#FF0000"; //設定填色 fillStyle 為紅色（"#FF0000"），並用 fill() 將圓形填滿。
+                        canvasCtx.fill();
+                    }
+                    // 手勢判斷
+                    const angles = handAngle(landmarks);
+                    const gesture = handPos(angles);
+                    resultDiv.innerText = "手勢：" + gesture;
+                }
+            }
+            canvasCtx.restore();
+        });
+
+        // ====== 錄影與下載部分 ======
+        let mediaRecorder;
+        let recordedChunks = [];
+
+        async function setupCamera() {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: VIDEO_WIDTH, height: VIDEO_HEIGHT },
+                audio: true
+            });
+            videoElement.srcObject = stream;
+            return new Promise((resolve) => {
+                videoElement.onloadedmetadata = () => resolve(videoElement);
+            });
+        }
+
+        // 開始錄影，並於 8 秒後停止
+        async function startRecording() {
+            const stream = videoElement.srcObject;
+            recordedChunks = [];
+            mediaRecorder = new MediaRecorder(stream, { mimeType: "video/webm; codecs=vp9" });
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data && event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+            mediaRecorder.onstop = handleRecordingStop;
+            mediaRecorder.start();
+
+            // 倒數計時顯示
+            let secondsLeft = 8;
+            timerDiv.innerText = secondsLeft;
+            const countdownInterval = setInterval(() => {
+                secondsLeft--;
+                timerDiv.innerText = secondsLeft;
+                if (secondsLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    timerDiv.innerText = "倒數結束";
+                    mediaRecorder.stop();
+                }
+            }, 1000);
+        }
+
+        // 錄影停止後處理：產生下載連結與上傳影片
+        function handleRecordingStop() {
+            const blob = new Blob(recordedChunks, { type: "video/webm" });
+            const url = window.URL.createObjectURL(blob);
+            downloadLink.href = url;
+            downloadLink.style.display = "inline-block";
+            // 若需要上傳影片，請呼叫上傳函式，例如：uploadVideo(blob);
+        }
+
+        // ====== 初始化與事件綁定 ======
+        async function init() {
+            await setupCamera();
+            videoElement.play();
+            canvasElement.width = VIDEO_WIDTH;
+            canvasElement.height = VIDEO_HEIGHT;
+            // 啟動手勢偵測迴圈
+            async function frameLoop() {
+                await hands.send({ image: videoElement });
+                requestAnimationFrame(frameLoop);
+            }
+            frameLoop();
+        }
+
+        // 綁定按鈕點擊事件，在使用者點擊後開始錄影
+        startButton.addEventListener("click", () => {
+            startRecording();
+            // 點擊後可隱藏按鈕避免重複錄影
+            startButton.style.display = "none";
+        });
+        /*
+            // 將錄影內容上傳至後端 (假設上傳 API 為 /upload)
+        function uploadVideo() {
+          const blob = new Blob(recordedChunks, { type: "video/webm" });
+          const formData = new FormData();
+          formData.append("video", blob, "recording.webm");
+          fetch("/upload", {
+            method: "POST",
+            body: formData
+          })
+          .then(response => response.text())
+          .then(data => console.log("上傳成功：", data))
+          .catch(err => console.error("上傳失敗：", err));
+        }
+        */
+
+        init();
+    </script>
+</body>
+
+</html>

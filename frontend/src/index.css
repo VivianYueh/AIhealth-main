@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+.btn-teal {
+  background-color: #38b2ac;
+  color: white;
+  border: none;
+}
+.btn-teal:hover {
+  background-color: #319795;
+}
+
+.bg-teal-light {
+  background: linear-gradient(135deg, #e6fffa, #b2f5ea);
+}
+
+.hero-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.hero-subtitle {
+  font-size: 1.2rem;
+  color: #4a5568;
+}
+
+.offcanvas-custom {
+  height: auto !important;
+  max-height: 300px;
+  top: 80px;
+  border-radius: 8px 0 0 8px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+}
+.hover\:bg-dark-subtle:hover {
+  background-color: #f8f9fa; /* Bootstrap light gray */
+}
+html, body {
+  height: 100%;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+footer {
+  margin-top: auto;
+}
